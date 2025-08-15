@@ -1,29 +1,29 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Hansel Cottage – Chatbot Test</title>
-    <style>
-      body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:32px;line-height:1.5;background:#f7fafc}
-      .card{max-width:800px;margin:0 auto;background:#fff;padding:24px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.08)}
-      h1{margin-top:0}
-      p{color:#4a5568}
-      code{background:#edf2f7;padding:2px 6px;border-radius:6px}
-      .hint{font-size:14px;color:#718096;margin-top:12px}
-    </style>
-  </head>
-  <body>
-    <div class="card">
-      <h1>Hansel Cottage – Chatbot Test Page</h1>
-      <p>This is a simple page to test the chatbot widget against the staging backend.</p>
-      <p>If the bubble doesn’t appear in the bottom-right, open the browser console for errors.</p>
-      <div class="hint">
-        Backend: <code>https://hansel-cottage.onrender.com</code>
-      </div>
-    </div>
-
-    <!-- Load the widget from your backend. It already points to /api/chat on your server. -->
-    <script src="https://hansel-cottage.onrender.com/widget.min.js" defer></script>
-  </body>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Chatbot Test</title>
+</head>
+<body>
+  <div id="chat" style="max-width:400px;margin:2em auto;font-family:sans-serif">
+    <div id="msgs" style="border:1px solid #ccc;height:200px;overflow:auto;padding:6px"></div>
+    <input id="msg" style="width:70%">
+    <button id="send">Send</button>
+  </div>
+  <script>
+    const API="https://hansel-cottage.onrender.com/api/chat";
+    const sid=localStorage.hc_sid||(localStorage.hc_sid=Math.random().toString(36).slice(2));
+    const msgs=document.getElementById("msgs"),input=document.getElementById("msg");
+    async function send(){
+      const text=input.value.trim(); if(!text) return;
+      msgs.innerHTML+=`<div>You: ${text}</div>`; input.value="";
+      try{
+        const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","X-Session-Id":sid},body:JSON.stringify({message:text})});
+        const j=await r.json(); msgs.innerHTML+=`<div>Bot: ${j.answer||"…"}</div>`; msgs.scrollTop=msgs.scrollHeight;
+      }catch{ msgs.innerHTML+="<div>Bot: Error</div>"; }
+    }
+    document.getElementById("send").onclick=send;
+    input.onkeypress=e=>e.key==="Enter"&&send();
+  </script>
+</body>
 </html>
