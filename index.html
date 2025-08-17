@@ -1,140 +1,178 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Hansel Cottage Chatbot Test</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #fafafa;
-    }
-    #chat-container {
-      max-width: 600px;
-      margin: 20px auto;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      height: 80vh;
+    body { margin:0; font-family: sans-serif; }
+
+    /* Floating bubble button */
+    #chatbot-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #0078d7;
       display: flex;
-      flex-direction: column;
-      background: #fff;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    #chat-messages {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-    }
-    .hc-user-msg {
-      text-align: right;
-      margin: 8px 0;
-      padding: 10px 14px;
-      border-radius: 16px;
-      background: #e0f7fa;
-      display: inline-block;
-      max-width: 80%;
-    }
-    .hc-bot-msg {
-      text-align: left;
-      margin: 8px 0;
-      padding: 10px 14px;
-      border-radius: 16px;
-      background: #f1f1f1;
-      display: inline-block;
-      max-width: 80%;
-    }
-    #chat-input {
-      display: flex;
-      border-top: 1px solid #ccc;
-    }
-    #chat-input input {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      outline: none;
-      font-size: 1em;
-    }
-    #chat-input button {
-      padding: 0 18px;
-      border: none;
-      background: #00796b;
-      color: white;
-      font-size: 1em;
+      justify-content: center;
+      align-items: center;
       cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      z-index: 9999;
     }
-    #chat-input button:hover {
-      background: #004d40;
+    #chatbot-button svg {
+      width: 28px; height: 28px; fill: #fff;
     }
-    .hc-bot-msg a {
-      color: #00796b;
+
+    /* Chat panel */
+    #chatbot-panel {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 340px;
+      max-height: 480px;
+      display: none;
+      flex-direction: column;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+      overflow: hidden;
+      z-index: 9999;
+    }
+    #chatbot-header {
+      background: #0078d7;
+      color: #fff;
+      padding: 10px;
       font-weight: bold;
-      text-decoration: underline;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #chatbot-close {
+      cursor: pointer;
+      font-size: 18px;
+    }
+    #chatbot-messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+    .msg { margin: 6px 0; line-height: 1.4; }
+    .user { text-align: right; }
+    .assistant { text-align: left; }
+    .user span {
+      background: #0078d7;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+    .assistant span {
+      background: #f1f1f1;
+      padding: 6px 10px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+
+    #chatbot-input {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+    #chatbot-text {
+      flex: 1;
+      border: none;
+      padding: 10px;
+      font-size: 14px;
+      outline: none;
+    }
+    #chatbot-send {
+      background: #0078d7;
+      border: none;
+      color: #fff;
+      padding: 0 16px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div id="chat-container">
-    <div id="chat-messages"></div>
-    <form id="chat-input">
-      <input type="text" id="msg" placeholder="Type your message..." autocomplete="off" />
-      <button type="submit">Send</button>
-    </form>
+
+<div id="chatbot-button">
+  <!-- Simple chat bubble icon -->
+  <svg viewBox="0 0 24 24">
+    <path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 
+             2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>
+  </svg>
+</div>
+
+<div id="chatbot-panel">
+  <div id="chatbot-header">
+    Hansel Cottage
+    <span id="chatbot-close">&times;</span>
   </div>
+  <div id="chatbot-messages"></div>
+  <form id="chatbot-input">
+    <input id="chatbot-text" type="text" placeholder="Type a message…" />
+    <button id="chatbot-send" type="submit">Send</button>
+  </form>
+</div>
 
-  <script>
-    // 👉 IMPORTANT: point this at your backend service
-    const API_BASE = "https://hansel-cottage.onrender.com";
+<script>
+  const API_BASE = "https://hc-chatbot-backend.onrender.com";
+  let sessionId = localStorage.getItem("chatbot-session-id");
+  if (!sessionId) {
+    sessionId = Math.random().toString(36).slice(2);
+    localStorage.setItem("chatbot-session-id", sessionId);
+  }
 
-    const messagesEl = document.getElementById("chat-messages");
-    const form = document.getElementById("chat-input");
-    const input = document.getElementById("msg");
+  const button = document.getElementById('chatbot-button');
+  const panel = document.getElementById('chatbot-panel');
+  const close = document.getElementById('chatbot-close');
+  const form = document.getElementById('chatbot-input');
+  const text = document.getElementById('chatbot-text');
+  const messages = document.getElementById('chatbot-messages');
 
-    function renderMarkdownLinks(s) {
-      const esc = s.replace(/&/g, "&amp;")
-                   .replace(/</g, "&lt;")
-                   .replace(/>/g, "&gt;");
-      return esc.replace(
-        /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-        '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
-      );
+  button.onclick = () => panel.style.display = 'flex';
+  close.onclick = () => panel.style.display = 'none';
+
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const msg = text.value.trim();
+    if (!msg) return;
+    addMessage(msg, 'user');
+    text.value = '';
+
+    try {
+      const res = await fetch(`${API_BASE}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-Id': sessionId
+        },
+        body: JSON.stringify({ message: msg, conversationId: sessionId })
+      });
+      const data = await res.json();
+      if (data.answer) addMessage(data.answer, 'assistant');
+      else addMessage('⚠️ Error contacting server.', 'assistant');
+    } catch (err) {
+      addMessage('⚠️ Error contacting server.', 'assistant');
     }
+  };
 
-    function appendMessage(text, isUser = false) {
-      const div = document.createElement("div");
-      div.className = isUser ? "hc-user-msg" : "hc-bot-msg";
-      if (isUser) {
-        div.textContent = text;
-      } else {
-        div.innerHTML = renderMarkdownLinks(text);
-      }
-      messagesEl.appendChild(div);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
+  function addMessage(text, who) {
+    const div = document.createElement('div');
+    div.className = `msg ${who}`;
+    div.innerHTML = `<span>${escapeHtml(text)}</span>`;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  }
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const msg = input.value.trim();
-      if (!msg) return;
-      appendMessage(msg, true);
-      input.value = "";
-
-      appendMessage("...", false);
-      try {
-        const res = await fetch(`${API_BASE}/api/chat`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: msg })
-        });
-        const data = await res.json();
-        messagesEl.removeChild(messagesEl.lastChild); // remove "..."
-        appendMessage(data.answer || "Sorry, no reply.", false);
-      } catch (err) {
-        messagesEl.removeChild(messagesEl.lastChild);
-        appendMessage("Error contacting server. Please try again.", false);
-      }
-    });
-  </script>
+  function escapeHtml(str) {
+    return str.replace(/[&<>]/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]||c));
+  }
+</script>
 </body>
 </html>
