@@ -3,41 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Hansel Cottage Chatbot</title>
+  <title>Hansel Cottage Chatbot Test</title>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
+      background: #fafafa;
     }
     #chat-container {
       max-width: 600px;
-      margin: 0 auto;
+      margin: 20px auto;
       border: 1px solid #ccc;
+      border-radius: 8px;
       height: 80vh;
       display: flex;
       flex-direction: column;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     #chat-messages {
       flex: 1;
-      padding: 10px;
+      padding: 15px;
       overflow-y: auto;
     }
     .hc-user-msg {
       text-align: right;
-      margin: 5px 0;
-      padding: 8px 12px;
-      border-radius: 12px;
+      margin: 8px 0;
+      padding: 10px 14px;
+      border-radius: 16px;
       background: #e0f7fa;
       display: inline-block;
+      max-width: 80%;
     }
     .hc-bot-msg {
       text-align: left;
-      margin: 5px 0;
-      padding: 8px 12px;
-      border-radius: 12px;
+      margin: 8px 0;
+      padding: 10px 14px;
+      border-radius: 16px;
       background: #f1f1f1;
       display: inline-block;
+      max-width: 80%;
     }
     #chat-input {
       display: flex;
@@ -45,15 +51,17 @@
     }
     #chat-input input {
       flex: 1;
-      padding: 10px;
+      padding: 12px;
       border: none;
       outline: none;
+      font-size: 1em;
     }
     #chat-input button {
-      padding: 10px 15px;
+      padding: 0 18px;
       border: none;
       background: #00796b;
       color: white;
+      font-size: 1em;
       cursor: pointer;
     }
     #chat-input button:hover {
@@ -61,6 +69,7 @@
     }
     .hc-bot-msg a {
       color: #00796b;
+      font-weight: bold;
       text-decoration: underline;
     }
   </style>
@@ -80,11 +89,9 @@
     const input = document.getElementById("msg");
 
     function renderMarkdownLinks(s) {
-      // escape HTML basics
       const esc = s.replace(/&/g, "&amp;")
                    .replace(/</g, "&lt;")
                    .replace(/>/g, "&gt;");
-      // turn [label](http://url) into anchor
       return esc.replace(
         /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
         '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
