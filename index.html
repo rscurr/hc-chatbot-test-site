@@ -2,147 +2,175 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Hansel Cottage Chatbot Test</title>
+  <title>Hansel Cottage – Chatbot (Test)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { margin:0; font-family: sans-serif; }
+    :root {
+      --hc-primary: #0078d7;
+      --hc-primary-dark: #005a9e;
+      --hc-bg: #ffffff;
+      --hc-bot: #f1f1f1;
+      --hc-user: #e8f3ff;
+      --hc-text: #111827;
+    }
+    html, body { margin:0; padding:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--hc-text); }
 
     /* Floating bubble button */
-    #chatbot-button {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: #0078d7;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      z-index: 9999;
+    #hc-bubble {
+      position: fixed; right: 20px; bottom: 20px;
+      width: 60px; height: 60px; border-radius: 999px;
+      background: var(--hc-primary);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25); cursor: pointer; z-index: 9999;
     }
-    #chatbot-button svg {
-      width: 28px; height: 28px; fill: #fff;
-    }
+    #hc-bubble svg { width: 28px; height: 28px; fill: #fff; }
 
-    /* Chat panel */
-    #chatbot-panel {
-      position: fixed;
-      bottom: 90px;
-      right: 20px;
-      width: 340px;
-      max-height: 480px;
-      display: none;
-      flex-direction: column;
-      border-radius: 12px;
-      background: #fff;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
-      overflow: hidden;
-      z-index: 9999;
+    /* Panel */
+    #hc-panel {
+      position: fixed; right: 20px; bottom: 90px;
+      width: 360px; max-height: 560px; display: none; flex-direction: column;
+      background: var(--hc-bg); border-radius: 14px; overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.25); z-index: 9999;
     }
-    #chatbot-header {
-      background: #0078d7;
-      color: #fff;
-      padding: 10px;
-      font-weight: bold;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    #hc-head {
+      background: var(--hc-primary); color: #fff; padding: 10px 12px;
+      display: flex; align-items: center; justify-content: space-between; font-weight: 600;
     }
-    #chatbot-close {
-      cursor: pointer;
-      font-size: 18px;
-    }
-    #chatbot-messages {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
-      font-size: 14px;
-    }
-    .msg { margin: 6px 0; line-height: 1.4; }
-    .user { text-align: right; }
-    .assistant { text-align: left; }
-    .user span {
-      background: #0078d7;
-      color: #fff;
-      padding: 6px 10px;
-      border-radius: 12px;
-      display: inline-block;
-    }
-    .assistant span {
-      background: #f1f1f1;
-      padding: 6px 10px;
-      border-radius: 12px;
-      display: inline-block;
-    }
+    #hc-close { cursor: pointer; font-size: 20px; line-height: 1; padding: 2px 6px; }
 
-    #chatbot-input {
-      display: flex;
-      border-top: 1px solid #ddd;
+    #hc-body { padding: 10px; overflow-y: auto; flex: 1; background: #fafafa; }
+
+    .hc-row { margin: 8px 0; display: flex; }
+    .hc-row.user { justify-content: flex-end; }
+    .hc-row.bot  { justify-content: flex-start; }
+
+    .hc-bubble {
+      display: inline-block; max-width: 85%;
+      padding: 8px 12px; border-radius: 14px; line-height: 1.4; font-size: 14px; white-space: pre-wrap;
     }
-    #chatbot-text {
-      flex: 1;
-      border: none;
-      padding: 10px;
-      font-size: 14px;
-      outline: none;
+    .hc-bubble.user { background: var(--hc-user); }
+    .hc-bubble.bot  { background: var(--hc-bot); }
+    .hc-bubble.bot a { color: var(--hc-primary-dark); text-decoration: underline; font-weight: 600; }
+
+    #hc-input {
+      display: flex; gap: 6px; padding: 8px; background: #fff; border-top: 1px solid #e6e6e6;
     }
-    #chatbot-send {
-      background: #0078d7;
-      border: none;
-      color: #fff;
-      padding: 0 16px;
-      cursor: pointer;
+    #hc-text {
+      flex: 1; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 10px; outline: none; font-size: 14px;
+    }
+    #hc-send {
+      padding: 0 14px; background: var(--hc-primary); color: #fff; border: 0; border-radius: 10px; cursor: pointer;
+    }
+    #hc-send:hover { background: var(--hc-primary-dark); }
+
+    @media (max-width: 480px) {
+      #hc-panel { width: calc(100vw - 24px); right: 12px; }
     }
   </style>
 </head>
 <body>
 
-<div id="chatbot-button">
-  <!-- Simple chat bubble icon -->
-  <svg viewBox="0 0 24 24">
+<!-- Floating chat bubble -->
+<div id="hc-bubble" aria-label="Open chat" title="Chat with us">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 
              2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>
   </svg>
 </div>
 
-<div id="chatbot-panel">
-  <div id="chatbot-header">
+<!-- Chat panel -->
+<div id="hc-panel" role="dialog" aria-label="Hansel Cottage Chat">
+  <div id="hc-head">
     Hansel Cottage
-    <span id="chatbot-close">&times;</span>
+    <span id="hc-close" aria-label="Close chat" title="Close">×</span>
   </div>
-  <div id="chatbot-messages"></div>
-  <form id="chatbot-input">
-    <input id="chatbot-text" type="text" placeholder="Type a message…" />
-    <button id="chatbot-send" type="submit">Send</button>
+  <div id="hc-body"></div>
+  <form id="hc-input">
+    <input id="hc-text" type="text" placeholder="Type a message…" autocomplete="off" />
+    <button id="hc-send" type="submit">Send</button>
   </form>
 </div>
 
 <script>
-  const API_BASE = "https://hc-chatbot-backend.onrender.com";
-  let sessionId = localStorage.getItem("chatbot-session-id");
+  // ✅ Use your real backend
+  const API_BASE = "https://hansel-cottage.onrender.com";
+
+  // Session (conversation) id persists across page loads
+  let sessionId = localStorage.getItem("hc-session-id");
   if (!sessionId) {
     sessionId = Math.random().toString(36).slice(2);
-    localStorage.setItem("chatbot-session-id", sessionId);
+    localStorage.setItem("hc-session-id", sessionId);
   }
 
-  const button = document.getElementById('chatbot-button');
-  const panel = document.getElementById('chatbot-panel');
-  const close = document.getElementById('chatbot-close');
-  const form = document.getElementById('chatbot-input');
-  const text = document.getElementById('chatbot-text');
-  const messages = document.getElementById('chatbot-messages');
+  // Elements
+  const $bubble  = document.getElementById('hc-bubble');
+  const $panel   = document.getElementById('hc-panel');
+  const $close   = document.getElementById('hc-close');
+  const $body    = document.getElementById('hc-body');
+  const $form    = document.getElementById('hc-input');
+  const $text    = document.getElementById('hc-text');
 
-  button.onclick = () => panel.style.display = 'flex';
-  close.onclick = () => panel.style.display = 'none';
+  // Show/hide
+  $bubble.addEventListener('click', () => {
+    $panel.style.display = 'flex';
+    $text.focus();
+  });
+  $close.addEventListener('click', () => {
+    $panel.style.display = 'none';
+  });
 
-  form.onsubmit = async (e) => {
+  // Markdown → safe HTML (links only) + line breaks
+  function renderMarkdownLinks(s) {
+    // basic escaping
+    const esc = (s || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const withLinks = esc.replace(
+      /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+    return withLinks.replace(/\n/g, '<br>');
+  }
+
+  // Append bubble
+  function appendBubble(text, who) {
+    const row = document.createElement('div');
+    row.className = `hc-row ${who}`;
+    const bub = document.createElement('div');
+    bub.className = `hc-bubble ${who}`;
+    if (who === 'bot') {
+      bub.innerHTML = renderMarkdownLinks(text);
+    } else {
+      bub.textContent = text;
+    }
+    row.appendChild(bub);
+    $body.appendChild(row);
+    $body.scrollTop = $body.scrollHeight;
+  }
+
+  // Typing indicator
+  let typingRow = null;
+  function showTyping() {
+    typingRow = document.createElement('div');
+    typingRow.className = 'hc-row bot';
+    const bub = document.createElement('div');
+    bub.className = 'hc-bubble bot';
+    bub.textContent = '…';
+    typingRow.appendChild(bub);
+    $body.appendChild(typingRow);
+    $body.scrollTop = $body.scrollHeight;
+  }
+  function hideTyping() {
+    if (typingRow && typingRow.parentNode) typingRow.parentNode.removeChild(typingRow);
+    typingRow = null;
+  }
+
+  // Submit
+  $form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const msg = text.value.trim();
+    const msg = ($text.value || '').trim();
     if (!msg) return;
-    addMessage(msg, 'user');
-    text.value = '';
+    appendBubble(msg, 'user');
+    $text.value = '';
+    showTyping();
 
     try {
       const res = await fetch(`${API_BASE}/api/chat`, {
@@ -154,25 +182,16 @@
         body: JSON.stringify({ message: msg, conversationId: sessionId })
       });
       const data = await res.json();
-      if (data.answer) addMessage(data.answer, 'assistant');
-      else addMessage('⚠️ Error contacting server.', 'assistant');
+      hideTyping();
+      appendBubble(data.answer || '⚠️ Error contacting server.', 'bot');
     } catch (err) {
-      addMessage('⚠️ Error contacting server.', 'assistant');
+      hideTyping();
+      appendBubble('⚠️ Error contacting server.', 'bot');
     }
-  };
+  });
 
-  function addMessage(text, who) {
-    const div = document.createElement('div');
-    div.className = `msg ${who}`;
-    div.innerHTML = `<span>${escapeHtml(text)}</span>`;
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  function escapeHtml(str) {
-    return str.replace(/[&<>]/g, c =>
-      ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]||c));
-  }
+  // (Optional) Greeting on open
+  appendBubble('Hi! Ask about availability, prices, or cottage info. You can also [book here](https://www.hanselcottage.com/availability).', 'bot');
 </script>
 </body>
 </html>
