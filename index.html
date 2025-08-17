@@ -84,6 +84,9 @@
   </div>
 
   <script>
+    // 👉 IMPORTANT: point this at your backend service
+    const API_BASE = "https://hansel-cottage.onrender.com";
+
     const messagesEl = document.getElementById("chat-messages");
     const form = document.getElementById("chat-input");
     const input = document.getElementById("msg");
@@ -119,7 +122,7 @@
 
       appendMessage("...", false);
       try {
-        const res = await fetch("/api/chat", {
+        const res = await fetch(`${API_BASE}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: msg })
