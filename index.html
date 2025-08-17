@@ -1,115 +1,130 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Hansel Cottage – Chatbot</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hansel Cottage Chatbot</title>
   <style>
-    :root{--bg:#fff;--fg:#111;--muted:#6b7280;--brand:#111827;--ring:#e5e7eb}
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-    /* Make sure we sit above EVERYTHING on the page */
-    #hc-fab{position:fixed;right:20px;bottom:20px;width:56px;height:56px;border-radius:999px;background:var(--brand);color:#fff;border:none;box-shadow:0 8px 24px rgba(0,0,0,.18);cursor:pointer;font-size:22px;z-index:2147483647}
-    #hc-wrap{position:fixed;right:20px;bottom:90px;width:340px;max-width:92vw;background:var(--bg);border:1px solid var(--ring);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);display:none;overflow:hidden;z-index:2147483647;pointer-events:auto}
-    .hc-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--ring);background:#f8fafc}
-    .hc-title{font-weight:600;font-size:14px}
-    .hc-close{border:none;background:transparent;font-size:18px;cursor:pointer;color:var(--muted)}
-    .hc-log{height:360px;overflow:auto;padding:12px;background:#fbfbfd}
-    .hc-msg{margin:8px 0;display:flex}
-    .hc-me{justify-content:flex-end}
-    .hc-bot{justify-content:flex-start}
-    .hc-bubble{max-width:78%;padding:8px 10px;border-radius:12px;white-space:pre-wrap;line-height:1.35;font-size:14px;border:1px solid var(--ring)}
-    .hc-me .hc-bubble{background:#dbeafe;border-color:#bfdbfe}
-    .hc-bot .hc-bubble{background:#fff}
-    .hc-input{display:flex;gap:8px;border-top:1px solid var(--ring);padding:10px;background:#fff}
-    .hc-input input{flex:1;border:1px solid var(--ring);border-radius:10px;padding:10px;font-size:14px;pointer-events:auto;background:#fff;color:#111}
-    .hc-input button{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:10px 12px;font-size:14px;cursor:pointer}
-    .hc-meta{font-size:11px;color:var(--muted);padding:6px 12px}
-    a{color:#2563eb;text-decoration:none}
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    #chat-container {
+      max-width: 600px;
+      margin: 0 auto;
+      border: 1px solid #ccc;
+      height: 80vh;
+      display: flex;
+      flex-direction: column;
+    }
+    #chat-messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    .hc-user-msg {
+      text-align: right;
+      margin: 5px 0;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: #e0f7fa;
+      display: inline-block;
+    }
+    .hc-bot-msg {
+      text-align: left;
+      margin: 5px 0;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: #f1f1f1;
+      display: inline-block;
+    }
+    #chat-input {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+    #chat-input input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      outline: none;
+    }
+    #chat-input button {
+      padding: 10px 15px;
+      border: none;
+      background: #00796b;
+      color: white;
+      cursor: pointer;
+    }
+    #chat-input button:hover {
+      background: #004d40;
+    }
+    .hc-bot-msg a {
+      color: #00796b;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
-
-<button id="hc-fab" aria-label="Open chat">💬</button>
-
-<div id="hc-wrap" role="dialog" aria-label="Chat with Hansel Cottage">
-  <div class="hc-head">
-    <div class="hc-title">Hansel Cottage Assistant</div>
-    <button class="hc-close" title="Close">✕</button>
+  <div id="chat-container">
+    <div id="chat-messages"></div>
+    <form id="chat-input">
+      <input type="text" id="msg" placeholder="Type your message..." autocomplete="off" />
+      <button type="submit">Send</button>
+    </form>
   </div>
-  <div id="hc-log" class="hc-log"></div>
-  <div class="hc-input">
-    <input id="hc-input" type="text" autocomplete="off" placeholder="Ask about availability, pricing, dogs…" />
-    <button id="hc-send" type="button">Send</button>
-  </div>
-  <div id="hc-meta" class="hc-meta"></div>
-</div>
 
-<script>
-(() => {
-  const API = "https://hansel-cottage.onrender.com/api/chat";
-  const sid = localStorage.hc_sid || (localStorage.hc_sid = (crypto.randomUUID?.() || ("sid-" + Math.random().toString(36).slice(2)+Date.now().toString(36))));
-  const wrap = document.getElementById("hc-wrap");
-  const fab = document.getElementById("hc-fab");
-  const closeBtn = document.querySelector(".hc-close");
-  const log = document.getElementById("hc-log");
-  const input = document.getElementById("hc-input");
-  const sendBtn = document.getElementById("hc-send");
-  const meta = document.getElementById("hc-meta");
+  <script>
+    const messagesEl = document.getElementById("chat-messages");
+    const form = document.getElementById("chat-input");
+    const input = document.getElementById("msg");
 
-  const open = () => { wrap.style.display = "block"; setTimeout(()=>input.focus(), 0); };
-  const close = () => { wrap.style.display = "none"; };
-
-  fab.onclick = () => (wrap.style.display === "block" ? close() : open());
-  closeBtn.onclick = close;
-
-  function add(role, text, sources){
-    const row=document.createElement("div");
-    row.className="hc-msg "+(role==="user"?"hc-me":"hc-bot");
-    const b=document.createElement("div");
-    b.className="hc-bubble";
-    b.textContent=text;
-    row.appendChild(b);
-    log.appendChild(row);
-    if (Array.isArray(sources) && sources.length){
-      const s=document.createElement("div");
-      s.style.cssText="font-size:11px;color:#374151;margin:4px 0 0 0";
-      s.innerHTML="Sources: "+sources.map(u=>`<a href="${u}" target="_blank" rel="noopener">${u}</a>`).join(" · ");
-      log.appendChild(s);
+    function renderMarkdownLinks(s) {
+      // escape HTML basics
+      const esc = s.replace(/&/g, "&amp;")
+                   .replace(/</g, "&lt;")
+                   .replace(/>/g, "&gt;");
+      // turn [label](http://url) into anchor
+      return esc.replace(
+        /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+      );
     }
-    log.scrollTop=log.scrollHeight;
-  }
 
-  add("assistant","Hi! I can check availability, estimate pricing, and answer questions from the house info and website. Try: “any week in March 2026?” or “is the garden secure for dogs?”");
-  meta.textContent="Session: "+sid;
-
-  async function send(){
-    const text=(input.value||"").trim();
-    if(!text) return;
-    add("user",text); input.value=""; meta.textContent="Sending…";
-    try{
-      const r=await fetch(API,{
-        method:"POST",
-        headers:{"Content-Type":"application/json","X-Session-Id":sid},
-        body:JSON.stringify({message:text})
-      });
-      const j=await r.json();
-      add("assistant", j.answer || "…", j.sources);
-      meta.textContent="";
-      setTimeout(()=>input.focus(), 0);
-    }catch(e){
-      add("assistant","Error contacting server. Please try again.");
-      meta.textContent=String(e);
-      setTimeout(()=>input.focus(), 0);
+    function appendMessage(text, isUser = false) {
+      const div = document.createElement("div");
+      div.className = isUser ? "hc-user-msg" : "hc-bot-msg";
+      if (isUser) {
+        div.textContent = text;
+      } else {
+        div.innerHTML = renderMarkdownLinks(text);
+      }
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
     }
-  }
-  sendBtn.onclick=send;
-  input.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); send(); } });
 
-  // Safety: ensure our panel actually receives clicks even if global CSS sets pointer-events:none
-  wrap.style.pointerEvents = "auto";
-  input.style.pointerEvents = "auto";
-})();
-</script>
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = input.value.trim();
+      if (!msg) return;
+      appendMessage(msg, true);
+      input.value = "";
 
+      appendMessage("...", false);
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        messagesEl.removeChild(messagesEl.lastChild); // remove "..."
+        appendMessage(data.answer || "Sorry, no reply.", false);
+      } catch (err) {
+        messagesEl.removeChild(messagesEl.lastChild);
+        appendMessage("Error contacting server. Please try again.", false);
+      }
+    });
+  </script>
 </body>
 </html>
